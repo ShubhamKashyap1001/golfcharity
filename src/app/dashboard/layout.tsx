@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, Target, Heart, Ticket, Trophy, CreditCard, LogOut, Menu, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
@@ -18,19 +18,67 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, subscription, isLoading } = useAuthStore();
+  const { user, subscription, isLoading, setSubscription } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // true while we are re-fetching subscription after Stripe redirect
+  const [rehydrating, setRehydrating] = useState(false);
+
+  // After Stripe redirects back with ?payment=success, the store subscription
+  // is stale (still null/inactive). Re-fetch it directly from DB right now.
+  useEffect(() => {
+    if (searchParams.get('payment') !== 'success') return;
+    if (!user) return;
+
+    setRehydrating(true);
+    const supabase = createSupabaseBrowserClient();
+
+    // Poll up to 8 times (8s) waiting for the webhook to write the subscription
+    let attempts = 0;
+    const poll = async () => {
+      attempts++;
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setSubscription(data);
+        toast.success('Payment confirmed! Welcome aboard 🎉');
+        setRehydrating(false);
+      } else if (attempts < 8) {
+        setTimeout(poll, 1000);
+      } else {
+        // Webhook may be slow — let them in anyway, page will show pending state
+        setRehydrating(false);
+      }
+    };
+    poll();
+  }, [searchParams, user, setSubscription]);
 
   useEffect(() => {
-    // Only redirect after AuthProvider has finished loading AND there is no user.
-    // isLoading starts true and is only set false by AuthProvider.
-    // This prevents the "flash redirect to login" after Stripe payment.
-    if (!isLoading && !user) {
+    if (isLoading || rehydrating) return;
+
+    if (!user) {
       router.push('/auth/login');
+      return;
     }
-  }, [user, isLoading, router]);
+
+    // Admins always have access — no subscription needed
+    if (user.role === 'admin') return;
+
+    const hasAccess = subscription?.status === 'active';
+    const isSubPage = pathname === '/dashboard/subscription';
+    if (!hasAccess && !isSubPage) {
+      router.push('/dashboard/subscription');
+    }
+  }, [user, isLoading, rehydrating, subscription, pathname, router]);
 
   const handleSignOut = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -40,14 +88,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/');
   };
 
-  // Show full-screen spinner while AuthProvider resolves the session.
-  // This is the key fix: we WAIT instead of immediately redirecting.
-  if (isLoading) {
+  if (isLoading || rehydrating) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-2 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-500 text-sm">Loading your account…</p>
+          <p className="text-gray-500 text-sm">
+            {rehydrating ? 'Confirming your payment…' : 'Loading your account…'}
+          </p>
         </div>
       </div>
     );
@@ -59,12 +107,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-black flex">
-      {/* Sidebar */}
       <aside className={cn(
         'fixed inset-y-0 left-0 z-40 w-64 bg-off-black border-r border-border flex flex-col transition-transform duration-200',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       )}>
-        {/* Logo */}
         <div className="p-5 border-b border-border">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-gold-gradient flex items-center justify-center text-black font-bold text-xs">G</div>
@@ -72,7 +118,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
 
-        {/* User info */}
         <div className="p-5 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gold-500/20 flex items-center justify-center text-gold-400 font-bold">
@@ -93,7 +138,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href}
@@ -108,7 +152,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {/* Bottom */}
         <div className="p-4 border-t border-border space-y-1">
           {!isAdmin && (
             <Link href="/dashboard/subscription"
@@ -129,12 +172,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Main content */}
       <main className="flex-1 md:ml-64">
         <div className="md:hidden flex items-center justify-between px-4 h-14 border-b border-border bg-off-black sticky top-0 z-20">
           <button onClick={() => setSidebarOpen(true)} className="text-gray-400"><Menu size={20} /></button>

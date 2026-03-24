@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, Check, Shield, ChevronDown } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';

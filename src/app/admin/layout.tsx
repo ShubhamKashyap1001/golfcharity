@@ -25,10 +25,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) router.push('/auth/login');
-      else if (!isAdmin()) router.push('/dashboard');
-    }
+    if (isLoading) return; // wait — AuthProvider hasn't finished yet
+    if (!user) { router.push('/auth/login'); return; }
+    if (!isAdmin()) { router.push('/dashboard'); return; }
   }, [user, isLoading, isAdmin, router]);
 
   const handleSignOut = async () => {
@@ -39,11 +38,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/');
   };
 
-  if (isLoading || !user) return (
+  // Always show spinner while loading — never redirect during this phase
+  if (isLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
+
+  // Loading done but no valid admin — render nothing while redirect fires
+  if (!user || !isAdmin()) return null;
 
   return (
     <div className="min-h-screen bg-black flex">

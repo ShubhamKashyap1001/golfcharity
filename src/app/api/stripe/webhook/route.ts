@@ -126,6 +126,19 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+  const invoice = event.data.object as Stripe.Invoice;
+
+  if (invoice.subscription) {
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'active' })
+      .eq('stripe_subscription_id', invoice.subscription as string);
+  }
+
+  break;
+}
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.subscription) {

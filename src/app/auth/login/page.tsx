@@ -17,13 +17,26 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
-    } else {
-      toast.success('Welcome back!');
-      router.push('/dashboard');
+      setLoading(false);
+      return;
     }
+
+    const userId = data.user?.id;
+    let role = 'subscriber';
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profile?.role) role = profile.role;
+    }
+
+    toast.success('Welcome back!');
+    router.push(role === 'admin' ? '/admin' : '/dashboard');
     setLoading(false);
   };
 
@@ -31,7 +44,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-hero-gradient pointer-events-none" />
       <div className="relative w-full max-w-md">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 justify-center mb-8">
           <div className="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center text-black font-bold text-sm">G</div>
           <span className="font-display text-xl font-semibold">Golf<span className="text-gold-500">Charity</span></span>
