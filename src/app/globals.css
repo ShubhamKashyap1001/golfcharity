@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --gold: #F5A623;
+  --gold-bright: #FFD700;
+  --dark: #0A0A0A;
+  --card: #1C1C1C;
+  --border: #2A2A2A;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #F5A623; }
+
+/* Selection */
+::selection { background: rgba(245, 166, 35, 0.3); color: #fff; }
+
+/* Focus rings */
+:focus-visible { outline: 2px solid #F5A623; outline-offset: 2px; }
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  /* Gold gradient text */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #F5A623 0%, #FFD700 50%, #F5A623 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Buttons */
+  .btn-gold {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-gold-500 text-black font-semibold rounded-lg
+           transition-all duration-200 hover:bg-gold-400 hover:shadow-gold active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    font-family: var(--font-body);
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-border text-white font-medium rounded-lg
+           transition-all duration-200 hover:border-gold-500 hover:text-gold-400 active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    font-family: var(--font-body);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-gray-400 font-medium rounded-lg
+           transition-all duration-200 hover:text-white hover:bg-white/5 active:scale-95;
+    font-family: var(--font-body);
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-dark-card border border-border rounded-xl p-6 shadow-card
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:border-border-light hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full bg-dark border border-border text-white rounded-lg px-4 py-3
+           placeholder:text-gray-600 focus:outline-none focus:border-gold-500
+           transition-colors duration-200;
+    font-family: var(--font-body);
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-400 mb-2;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-border my-6;
+  }
+
+  /* Number ball (for draw) */
+  .draw-ball {
+    @apply w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
+           bg-gold-gradient text-black shadow-gold;
+    font-family: var(--font-display);
+  }
+
+  .draw-ball-sm {
+    @apply w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+           bg-gold-gradient text-black;
+    font-family: var(--font-display);
+  }
+
+  /* Score bar */
+  .score-bar {
+    @apply relative flex items-center gap-3 p-4 bg-dark rounded-lg border border-border
+           hover:border-border-light transition-colors;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-4xl font-semibold;
+    font-family: var(--font-display);
+  }
+
+  .page-subtitle {
+    @apply text-gray-400 mt-2;
+  }
+
+  /* Section container */
+  .section {
+    @apply py-20 px-4;
+  }
+
+  .container {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Gradient noise overlay */
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* Gold shimmer animation */
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(245,166,35,0.1) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Glow on hover */
+  .glow-hover {
+    transition: box-shadow 0.3s ease;
+  }
+  .glow-hover:hover {
+    box-shadow: 0 0 30px rgba(245, 166, 35, 0.3);
+  }
+}
+
+/* Custom number input hide spinners */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
+
+/* Prose */
+.prose-dark {
+  color: #ccc;
+  line-height: 1.8;
+}
+.prose-dark p { margin-bottom: 1em; }
+.prose-dark h2 { color: #fff; font-size: 1.5em; margin: 1.5em 0 0.5em; }
+.prose-dark h3 { color: #ddd; font-size: 1.2em; margin: 1.2em 0 0.4em; }
